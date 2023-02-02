@@ -12,3 +12,5 @@ Driver board https://www.amazon.se/dp/B07M5CNP3B/ref=pe_24982401_506182521_TE_it
 
 Display https://www.amazon.se/dp/B075R69T93/ref=pe_24982401_506182521_TE_item
 
+
+![e-paper display](/landscape.jpg?raw=true "Title")
