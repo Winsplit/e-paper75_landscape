@@ -1,0 +1,243 @@
+esphome:
+  name: e-paper75
+  on_boot:
+      priority: 200.0
+      then:
+        - component.update: eink_display
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption
+
+ota:
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: !secret ap_ssid
+    password: !secret ap_password
+
+captive_portal:
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: Europe/Stockholm
+    on_time:
+      # Update at time xx minutes
+      - seconds: 0
+        minutes: /15
+        then:
+          - component.update: eink_display
+
+#Include sun
+sun:
+  latitude: !secret sun_latitude
+  longitude: !secret sun_longitude
+
+sensor:
+
+# Fuel level car
+  - platform: homeassistant
+    id: fuel_level
+    entity_id: sensor.car_fuel_level
+    internal: true
+
+# Text sensors
+text_sensor:
+
+# School lunch
+  - platform: homeassistant
+    id: skolmat_today
+    entity_id: skolmat.karralundsskolan_vecka
+    internal: true
+
+  # Sunrise
+  - platform: sun
+    type: sunrise
+    id: sun_sunrise
+    format: "%H:%M"
+  # Sunset
+  - platform: sun
+    type: sunset
+    id: sun_sunset
+    format: "%H:%M"
+
+# Icons
+# https://pictogrammers.com/library/mdi/
+font:
+
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: mdi_mini_1
+    size: 25
+    glyphs:
+      - "\U000F11EB" # spider-thread
+
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: mdi_small
+    size: 36
+    glyphs:
+      - "\U000F025A" # food - Shool lunch
+      - "\U000F0298" # gas-station - Fuel level car
+      - "\U000F05A8" # white-balance-sunny - Sunrise
+      - "\U000F0594" # weather-night - Sunset
+
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: mdi_small_1
+    size: 60
+    glyphs:
+      - "\U000F07DF" # mushroom
+      - "\U000F0907" # rabbit
+
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: mdi_small_2
+    size: 90
+    glyphs:
+      - "\U000F0907" # rabbit
+
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: mdi_large_1
+    size: 110
+    glyphs:
+      - "\U000F1304" # ski
+
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: mdi_large_2
+    size: 180
+    glyphs:
+      - "\U000F1897" # forest
+      - "\U000F05A8" # white-balance-sunny
+      - "\U000F0509" # terrain
+
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: mdi_large_3
+    size: 250
+    glyphs:
+      - "\U000F0509" # terrain
+
+# Download from: https://fonts.google.com/
+  - file: "fonts/OpenSans-Medium.ttf"
+    id: text_small_1
+    size: 34
+    glyphs: "'!%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖabcdefghijklmnopqrstuvwxyzåäö&/ "
+  - file: "fonts/OpenSans-Medium.ttf"
+    id: text_small_2
+    size: 30
+    glyphs: "'!%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖabcdefghijklmnopqrstuvwxyzåäö&/ "
+  - file: "fonts/OpenSans-Regular.ttf"
+    id: text_mini
+    size: 16
+    glyphs: "'!%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖabcdefghijklmnopqrstuvwxyzåäö&/ "
+
+# Pins for Waveshare ePaper ESP Board
+spi:
+  clk_pin: GPIO13
+  mosi_pin: GPIO14
+
+# Now render everything on the ePaper screen.
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO15
+    dc_pin: GPIO27
+    busy_pin: GPIO25
+    reset_pin: GPIO26
+    reset_duration: 2ms
+    model: 7.50inV2
+    update_interval: 60min
+    # rotation: 90°
+    lambda: |-
+
+      #define y1 80 // Offset rows
+      #define y2 30 // Offset header
+      #define y1_row 50 // Row distance
+      #define x1 70 // Position icons
+      #define x2 130 // Position text
+      #define x_gl 50 // Offset
+      #define x_gl2 240 // Offset
+
+      // Create a black background sqare that fills the display
+      #define xres 800
+      #define yres 480
+      it.filled_rectangle(0, 0, xres, yres, COLOR_ON);
+
+      // white-balance-sunny icon
+      it.print(775, 109, id(mdi_large_2), COLOR_OFF, TextAlign::BOTTOM_CENTER , "\U000F05A8");
+      // Forest icon
+      it.print(670, 450, id(mdi_large_2), COLOR_OFF, TextAlign::BOTTOM_CENTER , "\U000F1897");
+      // spider-thread icon
+      it.print(610, 430, id(mdi_mini_1), COLOR_OFF, TextAlign::BOTTOM_CENTER , "\U000F11EB");
+      // Rabbit icon
+      it.print(550, 450, id(mdi_small_1), COLOR_OFF, TextAlign::BOTTOM_CENTER , "\U000F0907");
+      // mushroom icon
+      it.print(760, 470, id(mdi_small_1), COLOR_OFF, TextAlign::BOTTOM_CENTER , "\U000F07DF");
+      // terrain icon
+      it.print(110, 550, id(mdi_large_3), COLOR_OFF, TextAlign::BOTTOM_CENTER , "\U000F0509");
+      // ski icon
+      it.print(180, 390, id(mdi_large_1), COLOR_OFF, TextAlign::BOTTOM_CENTER , "\U000F1304");
+
+
+      // Fuel level car
+      it.print(x_gl + x1, 1 * y1_row + y1, id(mdi_small), COLOR_OFF, TextAlign::CENTER_LEFT , "\U000F0298");
+      it.printf(x_gl + x2, 1 * y1_row + y1, id(text_small_1), COLOR_OFF, TextAlign::CENTER_LEFT, "%.0f%%", id(fuel_level).state);
+      // School lunch
+      it.print(x_gl + x1, 2 * y1_row + y1, id(mdi_small), COLOR_OFF, TextAlign::CENTER_LEFT , "\U000F025A");
+      // it.printf(x_gl + x2, 2 * y1_row + y1, id(text_small_2), COLOR_OFF, TextAlign::CENTER_LEFT, "%s", id(skolmat_today).state.c_str());
+
+      // Sunrise
+      it.print(x_gl2 + x1, 5 * y1_row + y1, id(mdi_small), COLOR_OFF, TextAlign::CENTER_LEFT , "\U000F05A8");
+      it.printf(x_gl2 + x2, 5 * y1_row + y1, id(text_small_1), COLOR_OFF, TextAlign::CENTER_LEFT, "%s", id(sun_sunrise).state.c_str());
+      // Sunset
+      it.print(x_gl2 + x1, 6 * y1_row + y1, id(mdi_small), COLOR_OFF, TextAlign::CENTER_LEFT , "\U000F0594");
+      it.printf(x_gl2 + x2, 6 * y1_row + y1, id(text_small_1), COLOR_OFF, TextAlign::CENTER_LEFT, "%s", id(sun_sunset).state.c_str());
+
+      // School lunch, with line break.
+      // Thanks pinballnewf for this solution for line break. Made only some small adjustments.
+      // https://community.home-assistant.io/t/eink-multi-line-text/255814/5
+      std::string s = id(skolmat_today).state;
+            int limit = 30;
+            int space = 0;
+            int i = 0;
+            int line = 0;
+            float y= 2 * y1_row + y1; // start Y
+            float y_offset = 40; // increment y_offset to print properly on display
+            while(i<s.length()){ //loop through string, counting all the spaces, and replacing the last one with ~ [marked by space variable] if the count exceeds limit of 35
+              if(s.substr(i,1) == " "){space = i; }
+              if(line>limit-1){s=s.substr(0,space)+"~"+s.substr(space+1);line = 0;}
+                i++;line++;}
+            size_t pos = s.find("~"); //find the first line break
+            int linecount = 1; //need number of lines to store the break positions in an array
+            int breakpositions[10]; //store breakpositions [the '~']
+            breakpositions[0] = -1; // start at -1 cause we need to truncate the replaced characters and without this will cut off 1st character of message
+            while ( pos != std::string::npos) //loop through  replacing the ~ with CR - though this doesnt matter here it will never be displayed, but need to change them to keep the loop from repeating at the start
+            {
+              s.replace(pos,1, "\n");
+              breakpositions[linecount] = pos; //store the position of the break in an array
+              pos = s.find("~"); // move forward
+              linecount++; // we have a new line, count it
+            }
+            breakpositions[linecount] = s.length(); //set the last entry in array to the length of string for calculation below
+            std::string singleline; //this will be the line we print
+            i = 0;
+            while (i < linecount ) {  // count through the lines
+              singleline = s.substr(breakpositions[i]+1,(breakpositions[i+1]-breakpositions[i]-1)); //extract each line of text from the string - strip off the CRLF and the space.
+              it.printf(x_gl + x2, y, id(text_small_1), COLOR_OFF, TextAlign::CENTER_LEFT, "%s", singleline.c_str()); //print it!
+              y = y + y_offset; // increment y_offset to print properly on display
+            i++;
+            }
+
+      // Show date and time of last update
+      it.strftime(400, 470, id(text_mini), COLOR_OFF, TextAlign::BASELINE_CENTER, "Last update: %A %d %b %Y  %H:%M", id(homeassistant_time).now());
